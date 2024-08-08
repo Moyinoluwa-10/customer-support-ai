@@ -5,6 +5,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Customer Support AI",
+  description: "Help customers that have questions",
 };
 
 export default function RootLayout({ children }) {
@@ -14,4 +15,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
