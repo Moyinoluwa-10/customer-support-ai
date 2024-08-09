@@ -14,9 +14,9 @@ import { useState, useRef, useEffect } from "react";
 export default function Home() {
   const [messages, setMessages] = useState([
     {
-      role: "assistant",
+      role: "model",
       content:
-        "Hi! I'm the Headstarter support assistant. How can I help you today?",
+        "Hi! I'm the Headstarter support model. How can I help you today?",
     },
   ]);
   const [message, setMessage] = useState("");
@@ -29,7 +29,7 @@ export default function Home() {
     setMessages((messages) => [
       ...messages,
       { role: "user", content: message },
-      { role: "assistant", content: "" },
+      { role: "model", content: "" },
     ]);
 
     try {
@@ -66,7 +66,7 @@ export default function Home() {
       setMessages((messages) => [
         ...messages,
         {
-          role: "assistant",
+          role: "model",
           content:
             "I'm sorry, but I encountered an error. Please try again later.",
         },
@@ -119,14 +119,12 @@ export default function Home() {
               key={index}
               display="flex"
               justifyContent={
-                message.role === "assistant" ? "flex-start" : "flex-end"
+                message.role === "model" ? "flex-start" : "flex-end"
               }
             >
               <Box
                 bgcolor={
-                  message.role === "assistant"
-                    ? "primary.main"
-                    : "secondary.main"
+                  message.role === "model" ? "primary.main" : "secondary.main"
                 }
                 color="white"
                 borderRadius={16}
