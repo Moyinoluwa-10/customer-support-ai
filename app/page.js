@@ -11,6 +11,27 @@ import {
 } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 
+function parseResponse(text) {
+  const lines = text.split("\n").filter((line) => line.trim() !== "");
+
+  return lines.map((line, index) => {
+    if (line.startsWith("*")) {
+      // Handle bullet points and sub-bullet points
+      return <li key={index}>{line.replace("*", "").trim()}</li>;
+    } else if (line.includes(":")) {
+      // Handle titles or strong text
+      return (
+        <p key={index}>
+          <strong>{line}</strong>
+        </p>
+      );
+    } else {
+      // Default case for paragraphs
+      return <p key={index}>{line}</p>;
+    }
+  });
+}
+
 export default function Home() {
   const [messages, setMessages] = useState([
     {
@@ -129,8 +150,10 @@ export default function Home() {
                 color="white"
                 borderRadius={16}
                 p={3}
+                className="chatbot-response"
               >
-                {message.content}
+                {/* {message.content} */}
+                {parseResponse(message.content)}
               </Box>
             </Box>
           ))}

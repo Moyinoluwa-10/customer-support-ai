@@ -46,7 +46,10 @@
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
 
-    --primary-glow: radial-gradient(rgba(100, 65, 255, 0.4), rgba(1, 65, 255, 0));
+    --primary-glow: radial-gradient(
+      rgba(100, 65, 255, 0.4),
+      rgba(1, 65, 255, 0)
+    );
     --secondary-glow: linear-gradient(
       to bottom right,
       rgba(1, 65, 255, 0),
@@ -104,4 +107,18 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.chatbot-response p {
+  margin: 10px 0;
+}
+
+.chatbot-response ul {
+  margin-left: 20px;
+  list-style-type: disc;
+}
+
+.chatbot-response ul ul {
+  list-style-type: circle;
+  margin-left: 20px;
 }
