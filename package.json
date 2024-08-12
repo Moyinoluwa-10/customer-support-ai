@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "customer-support-api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,12 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.624.0",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "@google/generative-ai": "^0.16.0",
     "@mui/material": "^5.16.6",
     "chalk": "^5.3.0",
-    "dotenv": "^16.4.5",
     "next": "14.2.5",
     "openai": "^4.55.1",
     "prompt-sync": "^4.2.0",

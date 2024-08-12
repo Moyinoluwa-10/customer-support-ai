@@ -1,14 +1,5 @@
 "use client";
-
-import {
-  Box,
-  Stack,
-  TextField,
-  Button,
-  lastMessage,
-  otherMessages,
-  content,
-} from "@mui/material";
+import { Box, Stack, TextField, Button } from "@mui/material";
 import { useState, useRef, useEffect } from "react";
 
 function parseResponse(text) {
@@ -37,7 +28,7 @@ export default function Home() {
     {
       role: "model",
       content:
-        "Hi! I'm the Headstarter support model. How can I help you today?",
+        "Hi! I'm the HeadStarter support model. How can I help you today?",
     },
   ]);
   const [message, setMessage] = useState("");
@@ -65,6 +56,7 @@ export default function Home() {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+      console.log(response);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -84,14 +76,18 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error:", error);
-      setMessages((messages) => [
-        ...messages,
-        {
-          role: "model",
-          content:
-            "I'm sorry, but I encountered an error. Please try again later.",
-        },
-      ]);
+      setMessages((messages) => {
+        let lastMessage = messages[messages.length - 1];
+        let otherMessages = messages.slice(0, messages.length - 1);
+        return [
+          ...otherMessages,
+          {
+            ...lastMessage,
+            content:
+              "I'm sorry, but I encountered an error. Please try again later.",
+          },
+        ];
+      });
     }
   };
 
@@ -101,6 +97,7 @@ export default function Home() {
       sendMessage();
     }
   };
+
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -110,6 +107,7 @@ export default function Home() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
   return (
     <Box
       sx={{ backgroundColor: "white" }}
@@ -119,13 +117,16 @@ export default function Home() {
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
+      py={5}
+      px={2.5}
     >
       <Stack
         direction="column"
-        width="600px"
-        height="700px"
+        width="100%"
+        maxWidth="600px"
+        height="100%"
         border="1px solid black"
-        p={2}
+        py={2}
         spacing={3}
       >
         <Stack
@@ -134,6 +135,7 @@ export default function Home() {
           flexGrow={1}
           overflow="auto"
           maxHeight="100%"
+          px={2}
         >
           {messages.map((message, index) => (
             <Box
@@ -152,14 +154,14 @@ export default function Home() {
                 p={3}
                 className="chatbot-response"
               >
-                {/* {message.content} */}
-                {parseResponse(message.content)}
+                {message.content}
+                {/* {parseResponse(message.content)} */}
               </Box>
             </Box>
           ))}
           <div ref={messagesEndRef} />
         </Stack>
-        <Stack direction="row" spacing={2}>
+        <Stack direction="row" spacing={2} px={2}>
           <TextField
             label="message"
             fullWidth
