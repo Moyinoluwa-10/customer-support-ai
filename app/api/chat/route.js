@@ -1,7 +1,9 @@
-require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: "../env.local" });
 
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+//env.GEMINI_API_KEY="AIzaSyAATweY-xt_4kDq3QYTV5qv7mKZs9krjMs"
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -55,6 +57,7 @@ export async function POST(req) {
     const result = await chat.sendMessage(data[data.length - 1].content);
 
     let responseText = await result.response.text();
+    console.log(responseText)
 
 
     responseText = responseText.replace(/\*/g, ''); 

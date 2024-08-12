@@ -33,14 +33,14 @@ export default function Home() {
     ]);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/chat/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify([...messages, { role: "user", content: message }]),
       });
-
+      console.log(response)
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
