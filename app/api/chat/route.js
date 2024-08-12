@@ -1,70 +1,94 @@
-require("dotenv").config({ path: "../env.local" });
-
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  BedrockRuntimeClient,
+  InvokeModelWithResponseStreamCommand,
+} from "@aws-sdk/client-bedrock-runtime";
 
-//env.GEMINI_API_KEY="AIzaSyAATweY-xt_4kDq3QYTV5qv7mKZs9krjMs"
+const systemPrompt = `You are a friendly and efficient customer support bot for HeadStarterAI, a platform specializing in AI-powered interviews for software engineering (SWE) jobs. Your primary goal is to assist users with their queries, provide information about the platform, troubleshoot issues, and ensure a smooth user experience.
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+1. HeadStarterAI offers AI-powered interviews for software engineering positions.
+2. Our platform helps candidates practice and prepare for real job interviews.
+3. We cover a wide range of topics including algorithms, data structures, system design, and behavioral questions.
+4. Users can access our services through our website or mobile app.
+5. If asked about technical issues, guide users to our troubleshooting page or suggest contacting our technical support team.
+6. Always maintain user privacy and do not share personal information.
+7. If you're unsure about any information, it's okay to say you don't know and offer to connect the user with a human representative.
 
-export async function POST(req) {
+Your goal is to provide accurate information, assist with common inquiries, and ensure a positive experience for all HeadStarterAI users.`;
+
+const decoder = new TextDecoder();
+const bedrockClient = new BedrockRuntimeClient({
+  region: process.env.NEXT_PUBLIC_AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+async function* makeIterator(prompt) {
+  const payload = {
+    anthropic_version: "bedrock-2023-05-31",
+    max_tokens: 1000,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: systemPrompt },
+          { type: "text", text: prompt },
+        ],
+      },
+    ],
+  };
+
+  const command = new InvokeModelWithResponseStreamCommand({
+    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+    contentType: "application/json",
+    accept: "application/json",
+    body: JSON.stringify(payload),
+  });
+
   try {
-    const data = await req.json();
-    // console.log(data[data.length - 1].content);
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // const prompt = data.prompt || "";
-    // const completion = model.generateContent(prompt, { stream: true });
-
-    // const stream = new ReadableStream({
-    //   async start(controller) {
-    //     const decoder = new TextDecoder();
-    //     try {
-    //       let responseText = "";
-    //       for await (const chunk of completion) {
-    //         const content = chunk?.choices?.[0]?.content || "";
-    //         responseText += content;
-    //         controller.enqueue(decoder.encode(content));
-    //       }
-    //       controller.close();
-    //     } catch (err) {
-    //       controller.error(err);
-    //     }
-    //   },
-    // });
-    const prompt = "You are a highly skilled and empathetic Customer Support AI, designed to assist customers with their inquiries, issues, and requests in a polite, professional, and efficient manner. Your goals are to: 1. Understand the Customer's Needs: Carefully read and comprehend the customer's message to accurately identify their concerns or questions. 2. Provide Clear and Accurate Information: Offer detailed, helpful, and accurate responses to address the customer's needs. If the issue requires further assistance or escalation, provide clear instructions on the next steps. 3. Be Empathetic and Patient: Always communicate with empathy and patience. Use a friendly and supportive tone, especially when dealing with frustrated or upset customers. 4. Respect Privacy and Security: Never ask for or disclose sensitive information unless absolutely necessary, and always prioritize the customer's privacy and data security. 5. Be Concise and Relevant: Avoid unnecessary information and focus on providing concise and relevant responses to solve the customer’s issue as quickly as possible. 6. Stay Consistent: Ensure that your responses are consistent with the company’s policies, procedures, and tone of voice. Always represent the company in a positive and professional manner. If a situation arises where you cannot provide a solution or if the query falls outside of your knowledge base, politely inform the customer and guide them on how they can seek further assistance.";
-    const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-        {
-          role: "user",
-          parts: [{ text: "Hello" }],
-        },
-        {
-          role: "model",
-          parts: [
-            {
-              text: "Hi! I'm your friendly support AI. How can I help you today?",
-            },
-          ],
-        },
-      ],
-    });
-    const result = await chat.sendMessage(data[data.length - 1].content);
-
-    let responseText = await result.response.text();
-    console.log(responseText)
-
-
-    responseText = responseText.replace(/\*/g, ''); 
-    responseText = responseText.trim().split('\n').map(paragraph => paragraph.trim()).filter(paragraph => paragraph.length > 0).join('\n\n');
-    return new NextResponse(responseText);
+    const response = await bedrockClient.send(command);
+    if (response.body) {
+      for await (const chunk of response.body) {
+        if (chunk.chunk) {
+          try {
+            const json = JSON.parse(decoder.decode(chunk.chunk.bytes));
+            if (json.type == "content_block_delta") {
+              yield json.delta.text;
+            }
+          } catch (error) {
+            console.log("eeror in chunk", error);
+            yield " ";
+          }
+        }
+      }
+    }
   } catch (error) {
-    console.error("Error in API route:", error);
+    console.error("Error in sending prompt:", error);
     return new NextResponse("Failed to generate content", { status: 500 });
   }
+
+  return new NextResponse("OK");
+}
+
+function iteratorToStream(iterator) {
+  return new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await iterator.next();
+
+      if (done) {
+        controller.close();
+      } else {
+        controller.enqueue(value);
+      }
+    },
+  });
+}
+
+export async function POST(req) {
+  const data = await req.json();
+  const iterator = makeIterator(data[data.length - 1].content);
+  const stream = iteratorToStream(iterator);
+  return new Response(stream);
 }
